@@ -1,0 +1,53 @@
+<template>
+  <div id="root" data-composition-id="07-principle" data-width="1920" data-height="1080" data-start="0" data-duration="10.244">
+    <style>
+      @font-face{font-family:Space Grotesk;font-style:normal;font-weight:500;font-display:swap;src:url("assets/fonts/captured-32687112bd2dd8db-s.1gepa_7fcx9fm.woff2")format("woff2");unicode-range:U+102-103,U+110-111,U+128-129,U+168-169,U+1A0-1A1,U+1AF-1B0,U+300-301,U+303-304,U+308-309,U+323,U+329,U+1EA0-1EF9,U+20AB}
+      @font-face{font-family:Space Grotesk;font-style:normal;font-weight:500;font-display:swap;src:url("assets/fonts/captured-28868e710e86be81-s.2eksvhm1z0jwa.woff2")format("woff2");unicode-range:U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+      @font-face{font-family:Space Grotesk;font-style:normal;font-weight:500;font-display:swap;src:url("assets/fonts/captured-0c89a48fa5027cee-s.p.2cyn07wtgehh0.woff2")format("woff2");unicode-range:U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+      @font-face{font-family:Space Grotesk;font-style:normal;font-weight:700;font-display:swap;src:url("assets/fonts/captured-32687112bd2dd8db-s.1gepa_7fcx9fm.woff2")format("woff2");unicode-range:U+102-103,U+110-111,U+128-129,U+168-169,U+1A0-1A1,U+1AF-1B0,U+300-301,U+303-304,U+308-309,U+323,U+329,U+1EA0-1EF9,U+20AB}
+      @font-face{font-family:Space Grotesk;font-style:normal;font-weight:700;font-display:swap;src:url("assets/fonts/captured-28868e710e86be81-s.2eksvhm1z0jwa.woff2")format("woff2");unicode-range:U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+      @font-face{font-family:Space Grotesk;font-style:normal;font-weight:700;font-display:swap;src:url("assets/fonts/captured-0c89a48fa5027cee-s.p.2cyn07wtgehh0.woff2")format("woff2");unicode-range:U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-e92fa6abd9c612ef-s.p.30axz4qhm1rgm.woff2")format("woff2");unicode-range:U+900-97F,U+1CD0-1CF4,U+1CF7-1CF9,U+200C-200D,U+20A8,U+20B9,U+20F0,U+25CC,U+A830-A839,U+A8E0-A8FF,U+11B00-11B0A}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-89b349c86e2966c0-s.0ri81no2psjj7.woff2")format("woff2");unicode-range:U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-8b8596bd16cf8eee-s.0o9b2vmiv77jv.woff2")format("woff2");unicode-range:U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:600;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-e92fa6abd9c612ef-s.p.30axz4qhm1rgm.woff2")format("woff2");unicode-range:U+900-97F,U+1CD0-1CF4,U+1CF7-1CF9,U+200C-200D,U+20A8,U+20B9,U+20F0,U+25CC,U+A830-A839,U+A8E0-A8FF,U+11B00-11B0A}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:600;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-89b349c86e2966c0-s.0ri81no2psjj7.woff2")format("woff2");unicode-range:U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:600;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-8b8596bd16cf8eee-s.0o9b2vmiv77jv.woff2")format("woff2");unicode-range:U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:700;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-e92fa6abd9c612ef-s.p.30axz4qhm1rgm.woff2")format("woff2");unicode-range:U+900-97F,U+1CD0-1CF4,U+1CF7-1CF9,U+200C-200D,U+20A8,U+20B9,U+20F0,U+25CC,U+A830-A839,U+A8E0-A8FF,U+11B00-11B0A}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:700;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-89b349c86e2966c0-s.0ri81no2psjj7.woff2")format("woff2");unicode-range:U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+      @font-face{font-family:Noto Sans Devanagari;font-style:normal;font-weight:700;font-stretch:100%;font-display:swap;src:url("assets/fonts/captured-8b8596bd16cf8eee-s.0o9b2vmiv77jv.woff2")format("woff2");unicode-range:U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: "Space Grotesk", sans-serif; color: #F3F0E9; }
+      .f07-bg { position: absolute; inset: 0; background: #111315; }
+      #f07-rail { position: absolute; left: 64px; top: 147px; width: 336px; display: flex; flex-direction: column; gap: 26px; }
+      .f07-kicker { font-weight: 500; font-size: 17px; letter-spacing: 0.14em; text-transform: uppercase; color: #F28C45; }
+      .f07-head { font-weight: 700; font-size: 56px; line-height: 0.98; letter-spacing: -0.03em; text-transform: lowercase; }
+      .f07-quote { font-weight: 700; font-size: 60px; line-height: 1.0; letter-spacing: -0.03em; color: #F28C45; }
+      .f07-card { border-top: 1px solid #34383A; padding-top: 16px; }
+      .f07-stat { font-weight: 700; font-size: 50px; line-height: 1.0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+      .f07-item { font-weight: 700; font-size: 27px; line-height: 1.15; letter-spacing: -0.01em; }
+      .f07-label { margin-top: 8px; font-weight: 500; font-size: 18px; line-height: 1.35; color: #A7ABA8; }
+      .deva { font-family: "Noto Sans Devanagari", "Space Grotesk", sans-serif; text-transform: none; letter-spacing: 0; line-height: 1.25; }
+      #f07-frame { position: absolute; left: 439px; top: 134px; width: 1442px; height: 812px; border: 1px solid #34383A; }
+      #f07-rule { position: absolute; left: 440px; top: 126px; width: 36px; height: 2px; background: #F28C45; }
+      #f07-bezel { position: absolute; left: 424px; top: 119px; width: 1472px; height: 842px; border-radius: 44px; background: #1D2022; border: 1px solid #34383A; }
+    </style>
+    <div id="f07-bg" class="clip f07-bg" data-start="0" data-duration="10.244" data-track-index="0"></div>
+    <div id="f07-frame"></div><div id="f07-rule"></div>
+    <div id="f07-rail">
+        <div id="f07-r0" class="f07-kicker">07 · The rule</div>
+        <div id="f07-r1" class="f07-quote">the rules don't bend for money</div>
+        <div id="f07-r2" class="f07-card"><div class="f07-item">The trade-off is his call</div><div class="f07-label">move a customer, or find indoor work</div></div>
+    </div>
+    <!-- approved frame video hoisted by assemble-index -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#f07-r0", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.20);
+      tl.fromTo("#f07-r1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.30);
+      tl.fromTo("#f07-r2", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 4.10);
+      tl.set({}, {}, 9.744);
+      window.__timelines["07-principle"] = tl;
+    </script>
+  </div>
+</template>

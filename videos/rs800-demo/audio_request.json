@@ -1,0 +1,53 @@
+{
+  "provider": "heygen",
+  "speed": "1.0",
+  "lines": [
+    {
+      "id": "01",
+      "text": "Forty-four degrees in Lucknow. Ravi, an electrician, still needs to earn eight hundred rupees today. The usual advice is: don't work outside. For him, that means losing the day."
+    },
+    {
+      "id": "02",
+      "text": "Eight Hundred doesn't tell him to stop. It rearranges the jobs he already has around the heat, and tells him honestly what the heat will cost him."
+    },
+    {
+      "id": "03",
+      "text": "He says his jobs in Hindi. A language model, called from Lambda, turns that into job cards: pay, time window, sun or shade. He checks every field. The model never decides timing or safety."
+    },
+    {
+      "id": "04",
+      "text": "Here is his day: four jobs, nine hundred and fifty rupees if he did them all. One tap to plan."
+    },
+    {
+      "id": "05",
+      "text": "A constraint solver on AWS Lambda reads the hourly heat index. The rooftop job was booked for nine, already in the danger band, so it moves to six-thirty. The air-conditioned job takes the hottest hours. Travel and rest are real blocks. Target reached, with a twenty-seven percent lower exposure score than the day as booked."
+    },
+    {
+      "id": "06",
+      "text": "Now make it five degrees hotter. The solver plans the whole day again. Every rooftop slot now breaks a heat rule, so that job is gone. Six hundred and fifty rupees. A hundred and fifty short. And it says exactly why."
+    },
+    {
+      "id": "07",
+      "text": "Eight Hundred will not bend the heat rules to make the money work. It shows him the trade-off, so he can decide: move a customer, or find indoor work."
+    },
+    {
+      "id": "08",
+      "text": "Every plan you just saw was solved on AWS Lambda, behind API Gateway. CloudWatch logs each replan. DynamoDB stores it, linked to the plan it came from. And the site runs on Amplify."
+    },
+    {
+      "id": "09",
+      "text": "It works in Hindi on a budget phone. And if he feels unwell, it stops planning and shows him what to do, and who to call."
+    },
+    {
+      "id": "10",
+      "text": "The heat doesn't stop the bills. Eight Hundred helps him plan around both."
+    }
+  ],
+  "bgm": {
+    "mode": "retrieve",
+    "query": "calm, warm, understated ambient piano bed, low energy, no drums",
+    "blob": "₹800 rearranges an outdoor worker's real jobs around the heat, and says honestly when the day's target can't be met without breaking a heat rule",
+    "arc": "Hook → Value claim → Demo loop (input → plan → hotter replan) → Principle → AWS proof → Reach → Close"
+  },
+  "voice": "02f211a5ef524caea2ad8447e72b218c"
+}

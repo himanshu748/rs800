@@ -10,3 +10,19 @@ out/
 .DS_Store
 *.zip
 .claude/
+
+# Demo video: keep scripts and storyboard, not recordings, renders or tooling scaffolds
+videos/*/assets/
+videos/*/clips/*
+!videos/*/clips/markers.json
+videos/*/renders/
+videos/*/capture/
+videos/*/snapshots/
+videos/*/.media/
+videos/*/AGENTS.md
+videos/*/CLAUDE.md
+videos/*/.hyperframes/
+videos/*/.thumbnails/
+videos/*/caption*.json
+videos/*/frame.md
+videos/*/index.html

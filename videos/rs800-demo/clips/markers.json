@@ -1,0 +1,39 @@
+{
+  "01-landing": {
+    "loaded": 1.69,
+    "noon": 11.19,
+    "replay_start": 12.86,
+    "end": 28.36
+  },
+  "02-hindi-entry": {
+    "loaded": 2.63,
+    "typing": 3.41,
+    "typed": 8.24,
+    "read_clicked": 9.57,
+    "drafts": 19.93,
+    "end": 30.97
+  },
+  "ids": {
+    "plan": "plan-787f4227939a",
+    "sim": "plan-6128ca999117"
+  },
+  "03-plan-replan": {
+    "jobs": 5.9,
+    "generate": 13.92,
+    "plan": 17.13,
+    "timeline": 21.76,
+    "reasons": 27.59,
+    "sim_ready": 34.23,
+    "replan": 36.43,
+    "replanned": 38.84,
+    "diff": 44.16,
+    "income": 51.3,
+    "footer": 56.67,
+    "end": 59.67
+  },
+  "04-mobile-hindi": {
+    "loaded": 6.31,
+    "unwell": 18.54,
+    "end": 23.54
+  }
+}
