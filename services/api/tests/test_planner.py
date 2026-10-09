@@ -127,3 +127,31 @@ def test_experienced_worker_keeps_rooftop_in_danger():
     assert blocked_reason("direct_sun", "moderate", 3, "experienced") is None
     assert blocked_reason("direct_sun", "moderate", 3, "unknown") is not None
     assert blocked_reason("shaded_outdoor", "light", 4, "experienced") is not None
+
+
+def test_solver_timeout_returns_full_shape(monkeypatch):
+    import app.optimizer as opt
+    normal = demo(0)
+    monkeypatch.setattr(opt, "_solve_phases", lambda req, cands: (None, False, True))
+    p = demo(0)
+    assert p["status"] == "solver_timeout" and p["scheduled_income"] == 0 and p["schedule"] == []
+    assert set(normal) == set(p)
+    assert {u["reason_code"] for u in p["unscheduled_jobs"]} == {"SOLVER_TIMEOUT"}
+    assert "SOLVER_TIMEOUT" in p["warning_codes"]
+
+
+def test_warning_codes_match_text():
+    p = demo(0)
+    assert p["warning_codes"] == ["PROTOTYPE", "UNACCLIMATIZED"]
+    assert len(p["warnings"]) == len(p["warning_codes"])
+
+
+def test_forecast_date_window():
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    OptimizeRequest(target_income=800, date=today.isoformat())
+    OptimizeRequest(target_income=800, date=(today + timedelta(days=6)).isoformat())
+    for bad in ((today - timedelta(days=1)).isoformat(), (today + timedelta(days=7)).isoformat(), "09-10-2026"):
+        with pytest.raises(ValidationError):
+            OptimizeRequest(target_income=800, date=bad)

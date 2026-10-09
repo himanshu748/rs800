@@ -66,6 +66,8 @@ def describe() -> dict:
             "Missing weather means no heat-aware plan.",
             "The income target never relaxes any rule above.",
         ],
+        "rule_codes": ["EXTREME_DANGER", "DANGER_HEAVY", "DANGER_DIRECT_SUN", "RECOVERY", "NO_WEATHER", "TARGET_NEVER_RELAXES"],
+        "limitation_codes": ["SCORE_NOT_RISK", "FORECAST_NOT_WBGT", "COOLED_ASSUMPTION", "REST_PROTOTYPE"],
         "weights": {
             "weather": dict(zip(["below_caution", "caution", "extreme_caution", "danger", "extreme_danger"], WEATHER_WEIGHT)),
             "workload": WORKLOAD_WEIGHT,

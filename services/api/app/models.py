@@ -1,9 +1,12 @@
 import re
+from datetime import date as date_cls, datetime, timedelta
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+MAX_FORECAST_DAYS = 6
 
 Environment = Literal["indoor_cooled", "indoor_uncooled", "shaded_outdoor", "direct_sun"]
 Workload = Literal["light", "moderate", "heavy"]
@@ -107,6 +110,20 @@ class OptimizeRequest(BaseModel):
     weather: WeatherRequest = WeatherRequest()
     temperature_delta: float = Field(default=0.0, ge=-2, le=6)
     jobs: list[Job] = Field(default_factory=list, max_length=20)
+
+    @field_validator("date")
+    @classmethod
+    def _forecast_date(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        try:
+            d = date_cls.fromisoformat(v)
+        except ValueError:
+            raise ValueError("date must be YYYY-MM-DD")
+        today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+        if not today <= d <= today + timedelta(days=MAX_FORECAST_DAYS):
+            raise ValueError(f"date must be today or up to {MAX_FORECAST_DAYS} days ahead")
+        return v
 
     @model_validator(mode="after")
     def _unique_ids(self):

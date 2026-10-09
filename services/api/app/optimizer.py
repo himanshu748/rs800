@@ -11,7 +11,17 @@ from .models import Job, OptimizeRequest, to_hhmm, to_min
 
 SLOT = 15
 SCALE = 10
-PHASE_LIMIT_S = 0.8
+# Four solves per plan (income, exposure, drift, baseline) must fit the 2 s budget.
+PHASE_LIMIT_S = 0.5
+
+WARNINGS = {
+    "PROTOTYPE": "This plan is a scheduling prototype, not a certified occupational safety assessment.",
+    "FIXED_CONFLICT": "Some fixed appointments overlap. Only one of each overlapping pair can be kept.",
+    "UNACCLIMATIZED": "Not yet used to working in heat: stricter rules applied. Build up outdoor time gradually over 1 to 2 weeks.",
+    "NOT_PROVEN_OPTIMAL": "Solver hit its time limit. This plan is valid but not proven to be the best.",
+    "SOLVER_TIMEOUT": "The solver ran out of time before finding any valid plan. No schedule is shown rather than an unchecked one.",
+    "NO_FEASIBLE_PLAN": "No valid plan exists for these jobs within the heat rules and working hours.",
+}
 
 
 @dataclass
@@ -243,12 +253,28 @@ def plan(req: OptimizeRequest, weather: dict) -> dict:
     runtime_ms = round((time.perf_counter() - t0) * 1000)
 
     base = {"target_income": req.target_income, "currency": "INR", "policy_version": policy.POLICY_VERSION,
-            "heat_work_experience": req.heat_work_experience}
+            "heat_work_experience": req.heat_work_experience, "max_available_income": sum(j.earnings for j in req.jobs)}
     if chosen is None:
-        return {**base, "status": "solver_timeout" if timed_out else "no_feasible_plan", "scheduled_income": 0,
-                "shortfall": req.target_income, "activities": [], "schedule": [], "unscheduled_jobs": [],
-                "solver": {"name": "ortools_cp_sat", "status": "UNKNOWN" if timed_out else "INFEASIBLE", "runtime_ms": runtime_ms},
-                "warnings": []}
+        code = "SOLVER_TIMEOUT" if timed_out else "NO_FEASIBLE_PLAN"
+        warning_codes = ["PROTOTYPE", code]
+        return {
+            **base,
+            "status": "solver_timeout" if timed_out else "no_feasible_plan",
+            "scheduled_income": 0,
+            "shortfall": req.target_income,
+            "relative_exposure_score": 0.0,
+            "baseline_exposure_score": 0.0,
+            "baseline_schedule": [],
+            "relative_score_reduction_percent": 0.0,
+            "solver": {"name": "ortools_cp_sat", "status": "UNKNOWN" if timed_out else "INFEASIBLE",
+                       "runtime_ms": runtime_ms, "candidates": len(cands)},
+            "schedule": [],
+            "activities": [],
+            "unscheduled_jobs": [{"job_id": j.id, "title": j.title, "earnings": j.earnings, "reason_code": code, "params": {}}
+                                 for j in req.jobs],
+            "warning_codes": warning_codes,
+            "warnings": [WARNINGS[c] for c in warning_codes],
+        }
 
     _validate(req, chosen, cats)
     income = sum(req.jobs[c.job].earnings for c in chosen)
@@ -286,13 +312,13 @@ def plan(req: OptimizeRequest, weather: dict) -> dict:
             r = {"reason_code": "NO_ROOM_IN_DAY", "params": {}}
         unscheduled.append({"job_id": j.id, "title": j.title, "earnings": j.earnings, **r})
 
-    warnings = ["This plan is a scheduling prototype, not a certified occupational safety assessment."]
+    warning_codes = ["PROTOTYPE"]
     if conflicts:
-        warnings.append("Some fixed appointments overlap. Only one of each overlapping pair can be kept.")
+        warning_codes.append("FIXED_CONFLICT")
     if req.heat_work_experience != "experienced":
-        warnings.append("Not yet used to working in heat: stricter rules applied. Build up outdoor time gradually over 1 to 2 weeks.")
+        warning_codes.append("UNACCLIMATIZED")
     if not proven:
-        warnings.append("Solver hit its time limit. This plan is valid but not proven to be the best.")
+        warning_codes.append("NOT_PROVEN_OPTIMAL")
 
     exposure_f = round(exposure / SCALE, 1)
     base_f = round(base_score / SCALE, 1)
@@ -301,7 +327,6 @@ def plan(req: OptimizeRequest, weather: dict) -> dict:
         "status": status,
         "scheduled_income": income,
         "shortfall": max(0, req.target_income - income),
-        "max_available_income": sum(j.earnings for j in req.jobs),
         "relative_exposure_score": exposure_f,
         "baseline_exposure_score": base_f,
         "baseline_schedule": base_rows,
@@ -311,5 +336,6 @@ def plan(req: OptimizeRequest, weather: dict) -> dict:
         "schedule": schedule,
         "activities": activities,
         "unscheduled_jobs": unscheduled,
-        "warnings": warnings,
+        "warning_codes": warning_codes,
+        "warnings": [WARNINGS[c] for c in warning_codes],
     }
