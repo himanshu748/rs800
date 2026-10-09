@@ -48,7 +48,7 @@ export default function Home() {
     <Shell>
       <section className="relative left-1/2 min-h-[88svh] w-screen -translate-x-1/2 overflow-hidden">
         <HeroScene hasImages={HAS_IMAGES} />
-        <div className="relative mx-auto flex min-h-[88svh] max-w-5xl flex-col justify-center px-4 py-16">
+        <div className="relative mx-auto flex min-h-[88svh] max-w-5xl flex-col justify-center px-4 pt-48 pb-16 sm:py-16">
           <p className="word text-xs font-semibold uppercase tracking-[0.16em] text-warn">
             {t("landEyebrow")} · {t("heroScenario")}
           </p>

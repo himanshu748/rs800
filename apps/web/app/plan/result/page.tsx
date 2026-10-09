@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { HeatTimeline, TimelineRange, type Row } from "@/components/HeatTimeline";
 import { Label, ModeBadge, Shell } from "@/components/Shell";
-import { api, ApiError, type Plan } from "@/lib/api";
+import { api, ApiError, type Diff, type Plan } from "@/lib/api";
 import { cityName, inr, useT } from "@/lib/i18n";
 import { catName, reasonText } from "@/lib/reasons";
 import { CAT_BG } from "@/components/HeatTimeline";
@@ -24,8 +24,11 @@ function Result() {
   const id = useSearchParams().get("id") || "";
   const { t } = useT();
   const { plans, savePlan } = usePlanner();
-  const [original, setOriginal] = useState<Plan | null>(plans[id] ?? null);
-  const [sim, setSim] = useState<Plan | null>(null);
+  const cached = plans[id];
+  const [original, setOriginal] = useState<Plan | null>(
+    cached ? (cached.parent_plan_id ? plans[cached.parent_plan_id] ?? null : cached) : null,
+  );
+  const [sim, setSim] = useState<Plan | null>(cached?.parent_plan_id ? cached : null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -63,8 +66,12 @@ function Result() {
         onSim={(p) => {
           savePlan(p);
           setSim(p);
+          window.history.replaceState(null, "", `/plan/result/?id=${p.plan_id}`);
         }}
-        onRestore={() => setSim(null)}
+        onRestore={() => {
+          setSim(null);
+          window.history.replaceState(null, "", `/plan/result/?id=${original.plan_id}`);
+        }}
       />
     </Shell>
   );
@@ -235,10 +242,10 @@ function Income({ plan }: { plan: Plan }) {
 
 function Simulator({ original, sim, onSim, onRestore }: { original: Plan; sim: Plan | null; onSim: (p: Plan) => void; onRestore: () => void }) {
   const { t, lang } = useT();
-  const [delta, setDelta] = useState(sim?.weather.temperature_delta ?? 5);
+  const [delta, setDelta] = useState(sim?.weather.temperature_delta ?? 3);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const diff = sim?.diff;
+  const diff = sim ? sim.diff ?? diffPlans(original, sim) : undefined;
 
   const run = async () => {
     setBusy(true);
@@ -327,4 +334,22 @@ function Simulator({ original, sim, onSim, onRestore }: { original: Plan; sim: P
 
 function istTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+// Replans saved before the API stored their diff are rebuilt here, with the same rules as the API.
+function diffPlans(before: Plan, after: Plan): Diff {
+  const b = new Map(before.schedule.map((s) => [s.job_id, s]));
+  const a = new Map(after.schedule.map((s) => [s.job_id, s]));
+  const un = new Map(after.unscheduled_jobs.map((u) => [u.job_id, u]));
+  return {
+    income_before: before.scheduled_income,
+    income_after: after.scheduled_income,
+    removed: [...b.values()].filter((s) => !a.has(s.job_id)).map((s) => ({
+      job_id: s.job_id, title: s.title, earnings: s.earnings,
+      reason_code: un.get(s.job_id)?.reason_code ?? "", params: un.get(s.job_id)?.params ?? {},
+    })),
+    added: [...a.values()].filter((s) => !b.has(s.job_id)).map((s) => ({ job_id: s.job_id, title: s.title, earnings: s.earnings, start: s.start })),
+    moved: [...a.values()].filter((s) => b.has(s.job_id) && b.get(s.job_id)!.start !== s.start)
+      .map((s) => ({ job_id: s.job_id, title: s.title, from: b.get(s.job_id)!.start, to: s.start })),
+  };
 }

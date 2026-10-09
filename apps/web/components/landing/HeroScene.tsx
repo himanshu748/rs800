@@ -15,7 +15,7 @@ function fmt(m: number) {
 }
 
 export function HeroScene({ hasImages }: { hasImages: boolean }) {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const reduced = useReducedMotion();
   const [p, setP] = useState(0);
 
@@ -60,6 +60,11 @@ export function HeroScene({ hasImages }: { hasImages: boolean }) {
           {hi.toFixed(0)}°C {lang === "hi" ? "हीट इंडेक्स" : "heat index"}
         </div>
         <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-text/70">{catName(row.category_index, lang)}</div>
+        <div className="mt-3 inline-block rounded-md px-3 py-1.5 font-display text-sm font-bold sm:text-lg"
+          style={hi >= 39.4 ? { background: "var(--critical)", color: "var(--bg)" } : { background: "var(--cool)", color: "var(--bg)" }}>
+          {hi >= 39.4 ? t("heroTooHot") : t("heroOk")}
+        </div>
+        <div className="mt-2 hidden text-sm text-text/70 sm:block">{t("heroSameRoof")}</div>
       </div>
     </div>
   );

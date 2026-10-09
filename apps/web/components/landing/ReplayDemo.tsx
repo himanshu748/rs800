@@ -11,6 +11,7 @@ import { useCountUp, useInView, useReducedMotion } from "./motion";
 const STEPS = [3200, 4200, 1600, 5200];
 const jobs = snap.jobs as unknown as Job[];
 const range = { from: 6 * 60, to: 20 * 60 };
+const DELTA = `+${snap.delta}°C`;
 
 export function ReplayDemo() {
   const { t, lang } = useT();
@@ -44,7 +45,7 @@ export function ReplayDemo() {
   const caption = [
     t("landReplay0"),
     t("landReplay1", { pct: Math.round(snap.normal.relative_score_reduction_percent) }),
-    t("landReplay2"),
+    t("landReplay2", { delta: snap.delta }),
     `${t("removed", { title: removed.title })}. ${reasonText(removed as never, lang)}`,
   ][step];
 
@@ -52,7 +53,7 @@ export function ReplayDemo() {
     <div ref={ref} className="rounded-3xl border border-border bg-surface p-4 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div role="tablist" aria-label={t("landReplayTitle")} className="flex flex-wrap gap-2">
-          {[t("asBooked"), t("rearranged"), "+5°C", t("after")].map((l, i) => (
+          {[t("asBooked"), t("rearranged"), DELTA, t("after")].map((l, i) => (
             <button key={l} role="tab" aria-selected={step === i}
               onClick={() => { setStep(i); setPlaying(false); }}
               className={`min-h-11 rounded-full border px-4 text-sm ${step === i ? "border-heat bg-heat/15 text-text" : "border-border text-muted hover:text-text"}`}>
@@ -81,9 +82,9 @@ export function ReplayDemo() {
         <div className="mb-2 flex items-center gap-3">
           <span className="text-xs text-muted">{t("scenario")}</span>
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg">
-            <div className="move h-full rounded-full bg-heat" style={{ width: hot ? "77%" : "22%" }} />
+            <div className="move h-full rounded-full bg-heat" style={{ width: hot ? `${((snap.delta + 2) / 8) * 100}%` : "25%" }} />
           </div>
-          <span className="w-14 text-right font-display font-bold tabular-nums text-heat">{hot ? "+5°C" : "+0°C"}</span>
+          <span className="w-14 text-right font-display font-bold tabular-nums text-heat">{hot ? DELTA : "+0°C"}</span>
         </div>
         <HeatTimeline hourly={hourly} jobs={jobs} rows={[row]} range={range} />
       </div>
