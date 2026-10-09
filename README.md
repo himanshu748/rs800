@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 and click **Explore the heatwave example**, then **Generate work plan**, then **Replan with +5°C**. Locally, plans are kept in memory unless `PLANS_TABLE` is set. Job reading from speech or text needs AWS credentials with Bedrock access. Everything else works without AWS.
+Open http://localhost:3000 and click **Explore the heatwave example**, then **Generate work plan**, then **Replan with +5°C**. Locally, plans are kept in memory unless `PLANS_TABLE` is set. Job reading from speech or text needs `MODAL_API_KEY` set (or AWS credentials with Bedrock access). Everything else works without AWS.
 
 ## Deploy to AWS
 
@@ -44,6 +44,8 @@ Both scripts are idempotent and need only the AWS CLI and Python 3.12 (no Docker
 | `PLANS_TABLE` | Lambda (set by `deploy.sh`) | DynamoDB table for plans |
 | `ALLOWED_ORIGINS` | Lambda (set by `deploy.sh`) | Comma-separated CORS origins |
 | `BEDROCK_MODEL_ID` | Lambda (set by `deploy.sh`) | Model for job extraction, default Claude Haiku 4.5 |
+| `MODAL_API_KEY` | your shell before `deploy.sh` | If set, job extraction uses a Modal-hosted model (OpenAI-compatible API) instead of Bedrock |
+| `MODAL_BASE_URL`, `MODAL_MODEL` | your shell before `deploy.sh` | Optional. Default to `https://inference.us-west.modal.direct/v1` and the GLM 5.3 endpoint |
 
 ## Architecture
 
@@ -57,7 +59,7 @@ Amplify Hosting ──► API Gateway HTTP API (throttled 10 rps)
                     ├─ heat_index.py  NWS Rothfusz heat index, screening bands
                     ├─ policy.py      hard rules, rest blocks, exposure weights
                     ├─ optimizer.py   CP-SAT: max income → min exposure → min drift from booked times
-                    ├─ parse_jobs.py  Bedrock Converse + tool schema → draft jobs (worker confirms)
+                    ├─ parse_jobs.py  Modal GLM 5.3 (OpenAI-compatible) or Bedrock → draft jobs (worker confirms)
                     └─ store.py       DynamoDB plans, 7-day TTL
                         │
                     CloudWatch: plan_generated / plan_recalculated JSON events
@@ -68,7 +70,7 @@ Amplify Hosting ──► API Gateway HTTP API (throttled 10 rps)
 | `POST /api/v1/plans/optimize` | Solve a day from target, hours, jobs and weather mode |
 | `POST /api/v1/plans/{id}/simulate` | Re-solve the same inputs with the forecast shifted by -2 to +6 °C, returns a diff |
 | `GET /api/v1/plans/{id}` | Fetch a stored plan |
-| `POST /api/v1/jobs/parse` | Hindi/English text to draft jobs via Bedrock |
+| `POST /api/v1/jobs/parse` | Hindi/English text to draft jobs via Modal (Bedrock fallback) |
 | `GET /api/v1/weather` | Annotated hourly weather (demo or live) |
 | `GET /api/v1/methodology` | Policy version, rules, weights, limits |
 | `GET /api/v1/health` | Health and storage backend |

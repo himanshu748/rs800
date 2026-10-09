@@ -27,7 +27,7 @@ export default function Methodology() {
       <article className="mx-auto max-w-2xl pt-10">
         <h1 className="font-display text-4xl font-bold">{t("methodTitle")}</h1>
         <p className="mt-4 text-muted">
-          The schedule comes from a constraint solver (Google OR-Tools CP-SAT) running on AWS Lambda. Bedrock only reads your spoken job
+          The schedule comes from a constraint solver (Google OR-Tools CP-SAT) running on AWS Lambda. A language model (GLM 5.3 on Modal, called from Lambda) only reads your spoken job
           list into draft fields that you confirm. It never decides timing or safety.
         </p>
         {err && <p className="mt-6 text-critical">{t("apiDown")}</p>}

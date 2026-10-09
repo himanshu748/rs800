@@ -138,7 +138,7 @@ function Stack() {
     ["DynamoDB", "stDynamo"],
   ];
   const side: [string, Key][] = [
-    ["Bedrock", "stBedrock"],
+    ["Modal · GLM 5.3", "stBedrock"],
     ["CloudWatch", "stCloudwatch"],
   ];
   return (
