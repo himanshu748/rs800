@@ -1,0 +1,12 @@
+.venv/
+.build/
+__pycache__/
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+out/
+.DS_Store
+*.zip
+.claude/
