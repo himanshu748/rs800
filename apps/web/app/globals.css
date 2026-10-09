@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #111315;
+  --surface: #1d2022;
+  --surface-2: #25292b;
+  --text: #f3f0e9;
+  --muted: #a7aba8;
+  --heat: #f28c45;
+  --cool: #72b8c5;
+  --warn: #e8b84c;
+  --critical: #e66e62;
+  --border: #34383a;
+  --cat0: #2a3a3e;
+  --cat1: #4a4630;
+  --cat2: #6b4a28;
+  --cat3: #7a3530;
+  --cat4: #5e1f2a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-heat: var(--heat);
+  --color-cool: var(--cool);
+  --color-warn: var(--warn);
+  --color-critical: var(--critical);
+  --color-border: var(--border);
+  --font-display: var(--font-space), var(--font-deva), system-ui, sans-serif;
+  --font-sans: var(--font-inter), var(--font-deva), system-ui, sans-serif;
+}
+
+html {
+  background: var(--bg);
+  color-scheme: dark;
+}
+
+body {
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+html[lang="hi"] body {
+  line-height: 1.6;
+}
+
+html[lang="hi"] [class*="tracking-"] {
+  letter-spacing: 0 !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--heat);
+  outline-offset: 2px;
+}
+
+input[type="range"] {
+  accent-color: var(--heat);
+}
+
+.hatch {
+  background-image: repeating-linear-gradient(135deg, rgba(243, 240, 233, 0.35) 0 3px, transparent 3px 7px);
+}
+
+.move {
+  transition: left 700ms cubic-bezier(0.2, 0.8, 0.2, 1), width 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 400ms ease, background-color 500ms ease;
+}
+
+.rise {
+  animation: rise 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 800ms ease, transform 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+.word {
+  display: inline-block;
+  animation: word 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes word {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+    filter: blur(6px);
+  }
+}
+
+.heat-shimmer {
+  animation: shimmer 3s ease-in-out infinite alternate;
+}
+
+@keyframes shimmer {
+  to {
+    transform: scale(1.015) translateY(-2px);
+    filter: saturate(1.1) brightness(1.05);
+  }
+}
+
+.flow {
+  stroke-dasharray: 6 8;
+  animation: flow 1.2s linear infinite;
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .word,
+  .heat-shimmer,
+  .flow,
+  .move,
+  .rise {
+    transition: none !important;
+    animation: none !important;
+  }
+}
