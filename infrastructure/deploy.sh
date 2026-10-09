@@ -57,16 +57,32 @@ aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null || aws s3 mb "s3://$BUCKET"
 aws s3 cp --only-show-errors "$BUILD/api.zip" "s3://$BUCKET/api.zip"
 
 echo "== Lambda"
-ENV="{\"Variables\":{\"PLANS_TABLE\":\"$TABLE\",\"ALLOWED_ORIGINS\":\"$ORIGINS\",\"BEDROCK_MODEL_ID\":\"$MODEL\"}}"
+# Written to a private file so MODAL_API_KEY never appears in process arguments.
+ENV_FILE="$BUILD/lambda-env.json"
+(umask 077 && TABLE="$TABLE" ORIGINS="$ORIGINS" MODEL="$MODEL" python3 - > "$ENV_FILE" <<'PY'
+import json, os
+v = {"PLANS_TABLE": os.environ["TABLE"], "ALLOWED_ORIGINS": os.environ["ORIGINS"], "BEDROCK_MODEL_ID": os.environ["MODEL"]}
+for k in ("MODAL_API_KEY", "MODAL_BASE_URL", "MODAL_MODEL"):
+    if os.environ.get(k):
+        v[k] = os.environ[k]
+print(json.dumps({"Variables": v}))
+PY
+)
+[ -n "${CODE_ONLY:-}" ] || { [ -n "${MODAL_API_KEY:-}" ] && echo "job parsing: Modal" || echo "job parsing: Bedrock (set MODAL_API_KEY to use Modal)"; }
 if aws lambda get-function --function-name "$FN" >/dev/null 2>&1; then
   aws lambda update-function-code --function-name "$FN" --s3-bucket "$BUCKET" --s3-key api.zip >/dev/null
   aws lambda wait function-updated --function-name "$FN"
-  aws lambda update-function-configuration --function-name "$FN" --environment "$ENV" >/dev/null
+  if [ -n "${CODE_ONLY:-}" ]; then
+    echo "CODE_ONLY set: kept the existing Lambda environment"
+  else
+    aws lambda update-function-configuration --function-name "$FN" --timeout 29 --environment "file://$ENV_FILE" >/dev/null
+  fi
 else
   aws lambda create-function --function-name "$FN" --runtime python3.12 --architectures x86_64 \
     --handler app.main.handler --role "$ROLE_ARN" --code "S3Bucket=$BUCKET,S3Key=api.zip" \
-    --memory-size 1024 --timeout 20 --environment "$ENV" >/dev/null
+    --memory-size 1024 --timeout 29 --environment "file://$ENV_FILE" >/dev/null
 fi
+rm -f "$ENV_FILE"
 aws lambda wait function-updated --function-name "$FN"
 aws logs put-retention-policy --log-group-name "/aws/lambda/$FN" --retention-in-days 14 2>/dev/null || true
 FN_ARN="$(aws lambda get-function --function-name "$FN" --query Configuration.FunctionArn --output text)"
