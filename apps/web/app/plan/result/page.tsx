@@ -7,7 +7,9 @@ import { HeatTimeline, TimelineRange, type Row } from "@/components/HeatTimeline
 import { Label, ModeBadge, Shell } from "@/components/Shell";
 import { api, ApiError, type Plan } from "@/lib/api";
 import { cityName, inr, useT } from "@/lib/i18n";
-import { reasonText } from "@/lib/reasons";
+import { catName, reasonText } from "@/lib/reasons";
+import { CAT_BG } from "@/components/HeatTimeline";
+import type { Key } from "@/lib/i18n";
 import { usePlanner } from "@/lib/store";
 
 export default function ResultPage() {
@@ -35,7 +37,7 @@ function Result() {
           setSim(p);
         } else setOriginal(p);
       },
-      (e) => setError(e instanceof ApiError && e.status === 404 ? "Plan not found or expired." : t("apiDown")),
+      (e) => setError(e instanceof ApiError && e.status === 404 ? t("planNotFound") : t("apiDown")),
     );
   }, [id, original, t]);
 
@@ -104,10 +106,11 @@ function PlanView({ original, sim, onSim, onRestore }: { original: Plan; sim: Pl
         <div className="mb-3 flex items-end justify-between gap-3">
           <h2 className="font-display text-2xl font-bold">{t("timeline")}</h2>
           <span className="text-xs text-muted">
-            {t("source")}: {plan.weather.source === "synthetic" ? t("simulatedLabel") : plan.weather.source}
+            {t("source")}: {plan.weather.source === "synthetic" ? t("demoSource") : plan.weather.source}
+            {plan.weather.fetched_at && ` · ${t("updated", { time: istTime(plan.weather.fetched_at) })}`}
           </span>
         </div>
-        <HeatTimeline hourly={plan.weather.hourly} jobs={jobs} rows={rows} range={range} />
+        <HeatTimeline hourly={plan.weather.hourly} jobs={jobs} rows={rows} range={range} details />
       </section>
 
       <Simulator original={original} sim={sim} onSim={onSim} onRestore={onRestore} />
@@ -141,6 +144,10 @@ function PlanView({ original, sim, onSim, onRestore }: { original: Plan; sim: Pl
                     <p className="mt-1 text-sm text-muted">
                       {s.start}-{s.end} · {t(`env_${s.environment}`)} · {t(`load_${s.workload}`)}
                     </p>
+                    <p className="mt-1 inline-flex items-center gap-2 text-xs text-muted">
+                      <span aria-hidden className="h-3 w-3 rounded-sm" style={{ background: CAT_BG[s.peak_category_index] }} />
+                      {t("exposureJob", { score: Math.round(s.exposure_score) })} · {t("peakHeat", { cat: catName(s.peak_category_index, lang) })}
+                    </p>
                     <p className="mt-2 text-sm">{reasonText(s, lang)}</p>
                   </div>
                 </div>
@@ -171,8 +178,8 @@ function PlanView({ original, sim, onSim, onRestore }: { original: Plan; sim: Pl
       )}
 
       <section className="mt-10 space-y-2 text-sm text-muted">
-        {plan.warnings.map((w) => (
-          <p key={w}>· {w}</p>
+        {(plan.warning_codes ?? plan.warnings.map(() => "")).map((c, i) => (
+          <p key={c || i}>· {c ? t(`w_${c}` as Key) : plan.warnings[i]}</p>
         ))}
         <p className="pt-2 font-mono text-xs">
           {t("computedOn", {
@@ -203,7 +210,7 @@ function Income({ plan }: { plan: Plan }) {
         <div className={`move h-full rounded-full ${met ? "bg-cool" : "bg-warn"}`} style={{ width: `${pct}%` }} />
       </div>
       <p className={`mt-3 font-display text-lg font-bold ${met ? "text-cool" : "text-warn"}`}>
-        {met ? `✓ ${t("targetReached")}` : plan.scheduled_income === 0 ? t("noPlan") : `${inr(plan.shortfall)} ${t("shortfall")}`}
+        {met ? `✓ ${t("targetReached")}` : plan.status === "solver_timeout" ? t("solverTimeout") : plan.scheduled_income === 0 ? t("noPlan") : `${inr(plan.shortfall)} ${t("shortfall")}`}
       </p>
       {!met && plan.scheduled_income > 0 && (
         <div className="mt-3 space-y-1">
@@ -316,4 +323,8 @@ function Simulator({ original, sim, onSim, onRestore }: { original: Plan; sim: P
       )}
     </section>
   );
+}
+
+function istTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
 }

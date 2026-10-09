@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Job, Plan, PlanInput } from "./api";
 import demo from "./demo_jobs.json";
 
@@ -40,7 +40,6 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const [input, setInputState] = useState<PlanInput>(DEFAULT_INPUT);
   const [plans, setPlans] = useState<Record<string, Plan>>({});
   const [ready, setReady] = useState(false);
-  const loaded = useRef(false);
 
   // Static export renders without localStorage, so saved input can only be applied after mount.
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -49,17 +48,16 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(KEY);
       if (raw) setInputState({ ...DEFAULT_INPUT, ...JSON.parse(raw) });
     } catch {}
-    loaded.current = true;
     setReady(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
-    if (!loaded.current) return;
+    if (!ready) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(input));
     } catch {}
-  }, [input]);
+  }, [input, ready]);
 
   const value: State = {
     input,
@@ -75,6 +73,20 @@ export function usePlanner() {
   const v = useContext(Ctx);
   if (!v) throw new Error("PlannerProvider missing");
   return v;
+}
+
+export const MAX_FORECAST_DAYS = 6;
+
+export function istDate(offsetDays = 0) {
+  return new Date(Date.now() + offsetDays * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
+export function requestBody(input: PlanInput): PlanInput {
+  if (input.weather.mode !== "live") return { ...input, date: null };
+  const today = istDate();
+  const last = istDate(MAX_FORECAST_DAYS);
+  const d = input.date && input.date >= today && input.date <= last ? input.date : today;
+  return { ...input, date: d };
 }
 
 export function toMin(t: string) {

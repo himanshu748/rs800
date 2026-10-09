@@ -7,7 +7,7 @@ import { Label, ModeBadge, Shell } from "@/components/Shell";
 import { VoiceEntry } from "@/components/VoiceEntry";
 import { api, ApiError, type DraftJob, type Experience, type Job } from "@/lib/api";
 import { cityName, inr, useT } from "@/lib/i18n";
-import { CITIES, DEMO_SCENARIO, demoInput, usePlanner } from "@/lib/store";
+import { CITIES, DEMO_SCENARIO, MAX_FORECAST_DAYS, demoInput, istDate, requestBody, usePlanner } from "@/lib/store";
 
 const HOURS = Array.from({ length: (22 - 4) * 4 + 1 }, (_, i) => {
   const m = 4 * 60 + i * 15;
@@ -132,6 +132,20 @@ function Setup({ onNext }: { onNext: () => void }) {
             ))}
           </div>
         </fieldset>
+
+        <label className="block">
+          <span className="text-sm text-muted">{t("date")}</span>
+          <input
+            type="date"
+            className={field}
+            min={istDate()}
+            max={istDate(MAX_FORECAST_DAYS)}
+            value={requestBody({ ...input, weather: { ...input.weather, mode: "live" } }).date ?? ""}
+            disabled={input.weather.mode === "demo"}
+            onChange={(e) => setInput((p) => ({ ...p, date: e.target.value || null }))}
+          />
+          {input.weather.mode === "demo" && <span className="mt-1 block text-sm text-muted">{t("dateHintDemo")}</span>}
+        </label>
       </div>
 
       <button
@@ -171,7 +185,7 @@ function Jobs({ onBack }: { onBack: () => void }) {
     setBusy(true);
     setError("");
     try {
-      const plan = await api.optimize(input);
+      const plan = await api.optimize(requestBody(input));
       savePlan(plan);
       router.push(`/plan/result/?id=${plan.plan_id}`);
     } catch (e) {
@@ -219,7 +233,7 @@ function Jobs({ onBack }: { onBack: () => void }) {
         {jobs.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-muted">
             {t("noJobs")}{" "}
-            <button onClick={() => setInput(() => ({ ...demoInput(), location: input.location, weather: input.weather, heat_work_experience: input.heat_work_experience }))}
+            <button onClick={() => setInput(() => ({ ...demoInput(), location: input.location, weather: input.weather, date: input.date, heat_work_experience: input.heat_work_experience }))}
               className="underline underline-offset-4 hover:text-text">
               {t("loadDemo")}
             </button>

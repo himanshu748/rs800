@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { DraftJob, Environment, Job, Workload } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, type Key } from "@/lib/i18n";
 import { toMin } from "@/lib/store";
 
 const TIMES = Array.from({ length: (22 - 5) * 4 + 1 }, (_, i) => {
@@ -21,23 +21,23 @@ function snap(t?: string | null) {
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }
 
-export function validate(j: Partial<Job>): Record<string, string> {
-  const e: Record<string, string> = {};
-  if (!j.title?.trim()) e.title = "Required";
-  if (!j.earnings || j.earnings <= 0) e.earnings = "Must be more than ₹0";
+export function validate(j: Partial<Job>): Record<string, Key> {
+  const e: Record<string, Key> = {};
+  if (!j.title?.trim()) e.title = "v_required";
+  if (!j.earnings || j.earnings <= 0) e.earnings = "v_earnings";
   if (!j.duration_minutes || j.duration_minutes < 15 || j.duration_minutes > 480 || j.duration_minutes % 15)
-    e.duration_minutes = "15 to 480, in steps of 15";
-  if (!j.earliest_start) e.earliest_start = "Required";
-  if (!j.latest_finish) e.latest_finish = "Required";
+    e.duration_minutes = "v_duration";
+  if (!j.earliest_start) e.earliest_start = "v_required";
+  if (!j.latest_finish) e.latest_finish = "v_required";
   if (j.earliest_start && j.latest_finish && j.duration_minutes && toMin(j.earliest_start) + j.duration_minutes > toMin(j.latest_finish))
-    e.latest_finish = "The job doesn't fit in this window";
+    e.latest_finish = "v_window";
   if (j.preferred_start && j.earliest_start && j.latest_finish && j.duration_minutes) {
     const p = toMin(j.preferred_start);
-    if (p < toMin(j.earliest_start) || p + j.duration_minutes > toMin(j.latest_finish)) e.preferred_start = "Outside the window";
+    if (p < toMin(j.earliest_start) || p + j.duration_minutes > toMin(j.latest_finish)) e.preferred_start = "v_outside";
   }
-  if (!j.environment) e.environment = "Required";
-  if (!j.workload) e.workload = "Required";
-  if ((j.travel_minutes ?? 0) % 15) e.travel_minutes = "Steps of 15";
+  if (!j.environment) e.environment = "v_required";
+  if (!j.workload) e.workload = "v_required";
+  if ((j.travel_minutes ?? 0) % 15) e.travel_minutes = "v_step15";
   return e;
 }
 
@@ -58,7 +58,7 @@ export function JobForm({ initial, onSave, onCancel }: { initial: DraftJob | Job
   const err = (k: string) =>
     tried && errors[k] ? (
       <span role="alert" className="mt-1 block text-sm text-critical">
-        {errors[k]}
+        {t(errors[k])}
       </span>
     ) : null;
 

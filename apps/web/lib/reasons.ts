@@ -32,6 +32,8 @@ const TEXT: Record<Lang, Record<string, string>> = {
     CONFLICTS_WITH_FIXED_APPOINTMENT: "Clashes with another fixed appointment that was kept.",
     TARGET_ALREADY_MET: "Not needed: your target is met with less heat exposure without it.",
     NO_ROOM_IN_DAY: "No time left for it once travel, rest and the other jobs are placed.",
+    SOLVER_TIMEOUT: "Not planned: the solver ran out of time.",
+    NO_FEASIBLE_PLAN: "No valid time for this job within the heat rules and your hours.",
   },
   hi: {
     BOOKED_TIME_BLOCKED: "{booked} बजे तय था, पर उस समय गर्मी का नियम टूटता है ({rule})। {moved_to} बजे पर रखा।",
@@ -45,6 +47,8 @@ const TEXT: Record<Lang, Record<string, string>> = {
     CONFLICTS_WITH_FIXED_APPOINTMENT: "दूसरे पक्के अपॉइंटमेंट से टकराता है, जो रखा गया।",
     TARGET_ALREADY_MET: "ज़रूरत नहीं: इसके बिना कम गर्मी में लक्ष्य पूरा हो रहा है।",
     NO_ROOM_IN_DAY: "रास्ते, आराम और बाक़ी कामों के बाद इसके लिए समय नहीं बचा।",
+    SOLVER_TIMEOUT: "प्लान नहीं हुआ: सॉल्वर का समय ख़त्म हो गया।",
+    NO_FEASIBLE_PLAN: "गर्मी के नियमों और आपके घंटों में इस काम का कोई सही समय नहीं।",
   },
 };
 
@@ -61,4 +65,24 @@ export function reasonText(r: Reason, lang: Lang) {
     peak: catName(Number(p.peak_category_index ?? 0), lang),
   };
   return fill(TEXT[lang][r.reason_code] ?? r.reason_code, vars);
+}
+
+const RULES: Record<Lang, Record<string, string>> = {
+  en: {},
+  hi: {
+    EXTREME_DANGER: "बहुत ज़्यादा ख़तरे वाली गर्मी: ठंडे कमरे के बाहर कोई काम नहीं।",
+    DANGER_HEAVY: "ख़तरे वाली गर्मी: ठंडे कमरे के बाहर भारी काम नहीं।",
+    DANGER_DIRECT_SUN: "ख़तरे वाली गर्मी: सीधी धूप का काम नहीं, जब तक आप गर्मी में काम के आदी न हों।",
+    RECOVERY: "बिना कूलिंग वाले काम के बाद आराम: ज़्यादा सावधानी वाली गर्मी में 15 मिनट, ख़तरे वाली में 30 मिनट।",
+    NO_WEATHER: "मौसम की जानकारी नहीं तो गर्मी वाला प्लान नहीं।",
+    TARGET_NEVER_RELAXES: "कमाई का लक्ष्य ऊपर का कोई नियम कभी ढीला नहीं करता।",
+    SCORE_NOT_RISK: "गर्मी स्कोर प्लान बनाने का पैमाना है, बीमारी के ख़तरे का अनुमान नहीं।",
+    FORECAST_NOT_WBGT: "पूर्वानुमान मौक़े पर मापी गई गर्मी नहीं है। हीट इंडेक्स WBGT नहीं है।",
+    COOLED_ASSUMPTION: "\"अंदर, ठंडी जगह\" मानता है कि कूलिंग चल रही है। गर्म, बंद कमरा ठंडा नहीं है।",
+    REST_PROTOTYPE: "आराम के समय प्रोटोटाइप नियम हैं, किसी व्यक्ति के लिए काम-आराम का नुस्ख़ा नहीं।",
+  },
+};
+
+export function ruleText(code: string | undefined, english: string, lang: Lang) {
+  return (code && RULES[lang][code]) || english;
 }

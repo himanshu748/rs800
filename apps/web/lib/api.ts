@@ -109,6 +109,7 @@ export interface Plan {
   activities: Activity[];
   unscheduled_jobs: UnscheduledJob[];
   warnings: string[];
+  warning_codes?: string[];
   weather: Weather;
   request: { jobs: Job[]; working_hours: { start: string; end: string }; temperature_delta: number };
   diff?: Diff;
@@ -116,6 +117,7 @@ export interface Plan {
 
 export interface PlanInput {
   target_income: number;
+  date?: string | null;
   location: { city: string };
   working_hours: { start: string; end: string };
   heat_work_experience: Experience;

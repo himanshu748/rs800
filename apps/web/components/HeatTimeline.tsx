@@ -26,7 +26,7 @@ export function TimelineRange(hours: { start: string; end: string }, rows: Row[]
   return { from: Math.floor(toMin(hours.start) / 60) * 60, to: Math.ceil(end / 60) * 60 };
 }
 
-export function HeatTimeline({ hourly, jobs, rows, range }: { hourly: HourlyWeather[]; jobs: Job[]; rows: Row[]; range: { from: number; to: number } }) {
+export function HeatTimeline({ hourly, jobs, rows, range, details = false }: { hourly: HourlyWeather[]; jobs: Job[]; rows: Row[]; range: { from: number; to: number }; details?: boolean }) {
   const { t, lang } = useT();
   const span = range.to - range.from;
   const pct = (m: number) => `${((m - range.from) / span) * 100}%`;
@@ -79,11 +79,17 @@ export function HeatTimeline({ hourly, jobs, rows, range }: { hourly: HourlyWeat
           <div key={h} className="flex-1">
             <div className="h-4 text-[10px] text-muted sm:text-xs">{i % 2 === 0 || span <= 600 ? String(h).padStart(2, "0") : ""}</div>
             <div className="move text-[10px] font-semibold text-text sm:text-xs">{Math.round(hourly[h]?.heat_index_c ?? 0)}°</div>
+            {details && (
+              <>
+                <div className="move text-[10px] text-muted sm:text-xs">{Math.round(hourly[h]?.temperature_c ?? 0)}</div>
+                <div className="text-[10px] text-muted sm:text-xs">{Math.round(hourly[h]?.relative_humidity ?? 0)}</div>
+              </>
+            )}
           </div>
         ))}
       </div>
       <figcaption className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <span>{t("hourly")} (°C):</span>
+        <span>{details ? `${t("heatIndexRow")} / ${t("tempRow")} / ${t("humidityRow")}:` : `${t("hourly")} (°C):`}</span>
         {[0, 1, 2, 3, 4].map((c) => (
           <span key={c} className="inline-flex items-center gap-1">
             <span className="h-3 w-3 rounded-sm" style={{ background: CAT_BG[c] }} />
