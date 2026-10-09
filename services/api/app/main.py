@@ -144,7 +144,7 @@ def parse(body: ParseRequest):
     try:
         out = parse_jobs.parse(body.text, body.language)
     except Exception as e:
-        _event("bedrock_parse_failed", detail=str(e)[:300])
+        _event("jobs_parse_failed", provider=parse_jobs.provider(), detail=str(e)[:500])
         raise HTTPException(502, "could not read the jobs from that text, please add them by hand")
     _event("jobs_parsed", count=len(out["jobs"]), model=out["model"], language=body.language)
     return out

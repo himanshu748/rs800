@@ -1,14 +1,19 @@
-"""Turn a worker's free-text or spoken job list into draft jobs with Amazon Bedrock.
+"""Turn a worker's free-text or spoken job list into draft jobs with a language model.
 
-Bedrock only extracts fields. It never decides timing, eligibility or safety, and every
+Uses a Modal-hosted model when MODAL_API_KEY is set, otherwise Amazon Bedrock.
+The model only extracts fields. It never decides timing, eligibility or safety, and every
 draft is shown to the worker for review before it can reach the optimizer.
 """
 
 import json
 import os
+import urllib.request
 import uuid
 
 DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+DEFAULT_MODAL_URL = "https://inference.us-west.modal.direct/v1"
+DEFAULT_MODAL_MODEL = "jhahimanshu653--ep-glm-5-3-server.us-west.modal.direct"
+MODAL_TIMEOUT_S = 25
 
 JOB_SCHEMA = {
     "type": "object",
@@ -73,7 +78,73 @@ def _clean(raw: dict) -> dict:
     return job
 
 
+def _extract_json(content: str) -> dict:
+    """Pull the first JSON object out of a model reply that may wrap it in prose or a code fence."""
+    i, j = content.find('{"jobs"'), content.rfind("}")
+    if i < 0:
+        i = content.find("{")
+    if i < 0 or j <= i:
+        raise ValueError("model reply had no JSON object")
+    data = json.loads(content[i : j + 1])
+    if not isinstance(data, dict) or "jobs" not in data:
+        raise ValueError("model reply JSON had no jobs")
+    return data
+
+
+def _modal(text: str) -> tuple[dict, str, dict]:
+    """Modal-hosted model through its OpenAI-compatible chat completions API."""
+    key = os.environ["MODAL_API_KEY"]
+    base = os.environ.get("MODAL_BASE_URL", DEFAULT_MODAL_URL).rstrip("/")
+    model = os.environ.get("MODAL_MODEL", DEFAULT_MODAL_MODEL)
+    body = {
+        "model": model,
+        "temperature": 0,
+        "max_tokens": 6000,
+        "messages": [
+            {"role": "system", "content": SYSTEM + " Reply with only a JSON object matching the record_jobs schema."},
+            {"role": "user", "content": text},
+        ],
+        "tools": [{"type": "function", "function": {"name": "record_jobs", "description": "Record the extracted jobs",
+                                                    "parameters": JOB_SCHEMA}}],
+        "tool_choice": {"type": "function", "function": {"name": "record_jobs"}},
+    }
+    req = urllib.request.Request(f"{base}/chat/completions", data=json.dumps(body).encode(),
+                                 headers={"content-type": "application/json", "authorization": f"Bearer {key}"})
+    with urllib.request.urlopen(req, timeout=MODAL_TIMEOUT_S) as r:
+        resp = json.loads(r.read())
+    choice = resp["choices"][0]
+    msg = choice["message"]
+    calls = msg.get("tool_calls") or []
+    if calls:
+        args = calls[0]["function"]["arguments"]
+        data = json.loads(args) if isinstance(args, str) else args
+        return data, f"modal:{model}", resp.get("usage", {})
+    # Reasoning models may put the answer after their thinking, or only in the reasoning field.
+    for text_out in (msg.get("content"), msg.get("reasoning_content"), msg.get("reasoning")):
+        try:
+            return _extract_json(text_out or ""), f"modal:{model}", resp.get("usage", {})
+        except ValueError:
+            continue
+    raise ValueError(
+        f"no jobs JSON in reply (finish_reason={choice.get('finish_reason')}, "
+        f"content_chars={len(msg.get('content') or '')}, "
+        f"reasoning_chars={len(msg.get('reasoning_content') or msg.get('reasoning') or '')}, "
+        f"usage={resp.get('usage')})"
+    )
+
+
+def provider() -> str:
+    return "modal" if os.environ.get("MODAL_API_KEY") else "bedrock"
+
+
 def parse(text: str, language: str) -> dict:
+    data, model, usage = _modal(text) if provider() == "modal" else _bedrock(text)
+    jobs = [_clean(j) for j in data.get("jobs", []) if isinstance(j, dict)][:20]
+    return {"jobs": jobs, "model": model, "language": language, "usage": usage,
+            "note": "Drafts from a language model. Review every field before planning."}
+
+
+def _bedrock(text: str) -> tuple[dict, str, dict]:
     import boto3
 
     model = os.environ.get("BEDROCK_MODEL_ID", DEFAULT_MODEL)
@@ -95,6 +166,4 @@ def parse(text: str, language: str) -> dict:
         raise ValueError("model did not return structured jobs")
     if isinstance(tool, str):
         tool = json.loads(tool)
-    jobs = [_clean(j) for j in tool.get("jobs", [])][:20]
-    return {"jobs": jobs, "model": model, "language": language,
-            "usage": resp.get("usage", {}), "note": "Drafts from Bedrock. Review every field before planning."}
+    return tool, f"bedrock:{model}", resp.get("usage", {})
