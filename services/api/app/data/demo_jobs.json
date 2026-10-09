@@ -1,0 +1,70 @@
+{
+ "label": "FICTIONAL DEMO JOBS",
+ "target_income": 800,
+ "working_hours": {
+  "start": "06:00",
+  "end": "19:00"
+ },
+ "jobs": [
+  {
+   "id": "job-001",
+   "title": "Rooftop electrical repair",
+   "earnings": 300,
+   "duration_minutes": 60,
+   "earliest_start": "06:30",
+   "latest_finish": "10:00",
+   "preferred_start": "09:00",
+   "environment": "direct_sun",
+   "workload": "moderate",
+   "location_zone": "Aliganj",
+   "travel_minutes": 15,
+   "flexible": true,
+   "confirmed": true
+  },
+  {
+   "id": "job-002",
+   "title": "Outdoor water-pump plumbing",
+   "earnings": 250,
+   "duration_minutes": 75,
+   "earliest_start": "07:00",
+   "latest_finish": "16:00",
+   "preferred_start": "12:00",
+   "environment": "shaded_outdoor",
+   "workload": "moderate",
+   "location_zone": "Gomti Nagar",
+   "travel_minutes": 30,
+   "flexible": true,
+   "confirmed": true
+  },
+  {
+   "id": "job-003",
+   "title": "Ceiling fan repair (air-conditioned office)",
+   "earnings": 250,
+   "duration_minutes": 75,
+   "earliest_start": "10:30",
+   "latest_finish": "17:00",
+   "preferred_start": "10:30",
+   "environment": "indoor_cooled",
+   "workload": "light",
+   "location_zone": "Hazratganj",
+   "travel_minutes": 15,
+   "flexible": true,
+   "confirmed": true
+  },
+  {
+   "id": "job-004",
+   "title": "Meter-board check (covered market)",
+   "earnings": 150,
+   "duration_minutes": 45,
+   "earliest_start": "10:00",
+   "latest_finish": "19:00",
+   "preferred_start": "16:00",
+   "environment": "shaded_outdoor",
+   "workload": "light",
+   "location_zone": "Aminabad",
+   "travel_minutes": 15,
+   "flexible": true,
+   "confirmed": true
+  }
+ ]
+}

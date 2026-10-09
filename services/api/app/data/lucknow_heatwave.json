@@ -1,0 +1,204 @@
+{
+ "id": "lucknow-heatwave-01",
+ "name": "A heatwave workday in Lucknow",
+ "city": "Lucknow",
+ "latitude": 26.85,
+ "longitude": 80.95,
+ "source": "synthetic",
+ "label": "SIMULATED HEATWAVE SCENARIO",
+ "note": "Hand-built hourly profile shaped like a pre-monsoon Lucknow heatwave day. Not a forecast or an observation.",
+ "hourly": [
+  {
+   "time": "00:00",
+   "temperature_c": 30,
+   "relative_humidity": 62,
+   "wind_kmh": 6,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "01:00",
+   "temperature_c": 29.5,
+   "relative_humidity": 64,
+   "wind_kmh": 6,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "02:00",
+   "temperature_c": 29,
+   "relative_humidity": 66,
+   "wind_kmh": 5,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "03:00",
+   "temperature_c": 28.5,
+   "relative_humidity": 68,
+   "wind_kmh": 5,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "04:00",
+   "temperature_c": 28.5,
+   "relative_humidity": 68,
+   "wind_kmh": 5,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "05:00",
+   "temperature_c": 29,
+   "relative_humidity": 65,
+   "wind_kmh": 6,
+   "shortwave_wm2": 5,
+   "uv_index": 0
+  },
+  {
+   "time": "06:00",
+   "temperature_c": 31,
+   "relative_humidity": 58,
+   "wind_kmh": 7,
+   "shortwave_wm2": 60,
+   "uv_index": 0.5
+  },
+  {
+   "time": "07:00",
+   "temperature_c": 32.5,
+   "relative_humidity": 52,
+   "wind_kmh": 8,
+   "shortwave_wm2": 200,
+   "uv_index": 1.5
+  },
+  {
+   "time": "08:00",
+   "temperature_c": 34.5,
+   "relative_humidity": 46,
+   "wind_kmh": 9,
+   "shortwave_wm2": 380,
+   "uv_index": 3.5
+  },
+  {
+   "time": "09:00",
+   "temperature_c": 36.5,
+   "relative_humidity": 40,
+   "wind_kmh": 10,
+   "shortwave_wm2": 560,
+   "uv_index": 6
+  },
+  {
+   "time": "10:00",
+   "temperature_c": 38.5,
+   "relative_humidity": 35,
+   "wind_kmh": 11,
+   "shortwave_wm2": 720,
+   "uv_index": 8
+  },
+  {
+   "time": "11:00",
+   "temperature_c": 40.5,
+   "relative_humidity": 30,
+   "wind_kmh": 12,
+   "shortwave_wm2": 840,
+   "uv_index": 10
+  },
+  {
+   "time": "12:00",
+   "temperature_c": 42,
+   "relative_humidity": 27,
+   "wind_kmh": 13,
+   "shortwave_wm2": 900,
+   "uv_index": 11
+  },
+  {
+   "time": "13:00",
+   "temperature_c": 43,
+   "relative_humidity": 25,
+   "wind_kmh": 13,
+   "shortwave_wm2": 880,
+   "uv_index": 11
+  },
+  {
+   "time": "14:00",
+   "temperature_c": 44,
+   "relative_humidity": 23,
+   "wind_kmh": 14,
+   "shortwave_wm2": 800,
+   "uv_index": 10
+  },
+  {
+   "time": "15:00",
+   "temperature_c": 44,
+   "relative_humidity": 23,
+   "wind_kmh": 14,
+   "shortwave_wm2": 660,
+   "uv_index": 8
+  },
+  {
+   "time": "16:00",
+   "temperature_c": 43,
+   "relative_humidity": 24,
+   "wind_kmh": 13,
+   "shortwave_wm2": 480,
+   "uv_index": 5.5
+  },
+  {
+   "time": "17:00",
+   "temperature_c": 40.5,
+   "relative_humidity": 28,
+   "wind_kmh": 12,
+   "shortwave_wm2": 280,
+   "uv_index": 3
+  },
+  {
+   "time": "18:00",
+   "temperature_c": 37.5,
+   "relative_humidity": 34,
+   "wind_kmh": 10,
+   "shortwave_wm2": 90,
+   "uv_index": 1
+  },
+  {
+   "time": "19:00",
+   "temperature_c": 35,
+   "relative_humidity": 40,
+   "wind_kmh": 8,
+   "shortwave_wm2": 10,
+   "uv_index": 0
+  },
+  {
+   "time": "20:00",
+   "temperature_c": 33.5,
+   "relative_humidity": 45,
+   "wind_kmh": 7,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "21:00",
+   "temperature_c": 32.5,
+   "relative_humidity": 50,
+   "wind_kmh": 6,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "22:00",
+   "temperature_c": 31.5,
+   "relative_humidity": 55,
+   "wind_kmh": 6,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  },
+  {
+   "time": "23:00",
+   "temperature_c": 30.5,
+   "relative_humidity": 59,
+   "wind_kmh": 6,
+   "shortwave_wm2": 0,
+   "uv_index": 0
+  }
+ ]
+}
