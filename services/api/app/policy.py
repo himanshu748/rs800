@@ -37,6 +37,13 @@ def blocked_reason(environment: str, workload: str, category: int, experience: s
     return None
 
 
+def travel_blocked_reason(category: int) -> str | None:
+    """Travel is light outdoor activity: barred in extreme danger, allowed (and scored) below it."""
+    if category >= EXTREME_DANGER:
+        return "EXTREME_DANGER_NO_TRAVEL"
+    return None
+
+
 def recovery_minutes(environment: str, max_category: int) -> int:
     """Explicit rest block required after a job, by the hottest slot the job touched."""
     if environment == "indoor_cooled":
@@ -62,11 +69,12 @@ def describe() -> dict:
             "Extreme danger: no work outside a cooled indoor space.",
             "Danger: no heavy work outside a cooled indoor space.",
             "Danger: no direct-sun work unless the worker says they are used to working in heat.",
-            "Recovery after an uncooled job: 15 min if it touched extreme caution, 30 min if it touched danger.",
+            "Extreme danger: no travel between jobs either. Below extreme danger, travel is allowed and counted as light work in direct sun.",
+            "Recovery after an uncooled job: 15 min if it touched extreme caution, 30 min if it touched danger. The rest must end inside the working hours.",
             "Missing weather means no heat-aware plan.",
             "The income target never relaxes any rule above.",
         ],
-        "rule_codes": ["EXTREME_DANGER", "DANGER_HEAVY", "DANGER_DIRECT_SUN", "RECOVERY", "NO_WEATHER", "TARGET_NEVER_RELAXES"],
+        "rule_codes": ["EXTREME_DANGER", "DANGER_HEAVY", "DANGER_DIRECT_SUN", "TRAVEL", "RECOVERY", "NO_WEATHER", "TARGET_NEVER_RELAXES"],
         "limitation_codes": ["SCORE_NOT_RISK", "FORECAST_NOT_WBGT", "COOLED_ASSUMPTION", "REST_PROTOTYPE"],
         "weights": {
             "weather": dict(zip(["below_caution", "caution", "extreme_caution", "danger", "extreme_danger"], WEATHER_WEIGHT)),

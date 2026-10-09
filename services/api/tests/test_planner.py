@@ -114,13 +114,46 @@ def test_travel_and_recovery_do_not_overlap_work():
     assert any(a["type"] == "travel" for a in p["activities"])
 
 
-def test_demo_transition_800_to_650():
-    normal, hot = demo(0), demo(5)
+def test_demo_transition_800_to_650_at_plus3():
+    normal, hot = demo(0), demo(3)
     assert normal["status"] == "target_met" and normal["scheduled_income"] == 800
     assert hot["status"] == "target_not_met" and hot["scheduled_income"] == 650 and hot["shortfall"] == 150
     dropped = {u["job_id"]: u["reason_code"] for u in hot["unscheduled_jobs"]}
     assert dropped == {"job-001": "BLOCKED_BY_HEAT_POLICY"}
     assert normal["relative_exposure_score"] < normal["baseline_exposure_score"]
+
+
+def test_plus5_drops_jobs_for_travel_and_rest():
+    hot = demo(5)
+    assert hot["scheduled_income"] == 250
+    reasons = {u["job_id"]: (u["reason_code"], u["params"].get("rule")) for u in hot["unscheduled_jobs"]}
+    assert reasons["job-003"] == ("BLOCKED_BY_HEAT_POLICY", "EXTREME_DANGER_NO_TRAVEL")
+    assert reasons["job-004"][0] == "BLOCKED_BY_HEAT_POLICY" and hot["unscheduled_jobs"][-1]["params"]["no_rest_slots"] > 0
+
+
+def _cats(delta):
+    w = get_weather("demo", "lucknow-heatwave-01", "Lucknow", None, delta, "Asia/Kolkata")
+    return [r["category_index"] for r in w["hourly"]]
+
+
+def test_travel_never_in_extreme_danger():
+    for delta in range(-2, 7):
+        cats = _cats(delta)
+        for a in demo(delta)["activities"]:
+            if a["type"] == "travel":
+                assert all(cats[m // 60] < 4 for m in range(to_min(a["start"]), to_min(a["end"]), 15)), (delta, a)
+
+
+def test_rest_ends_inside_workday():
+    for delta in range(-2, 7):
+        assert all(to_min(a["end"]) <= to_min("19:00") for a in demo(delta)["activities"]), delta
+
+
+def test_job_with_no_time_to_rest_is_reported():
+    hot = flat_weather(33, 40)
+    p = run([job(id="a", environment="shaded_outdoor", workload="light", earliest_start="18:00", latest_finish="19:00")],
+            target=100, weather=hot)
+    assert p["unscheduled_jobs"][0]["reason_code"] == "NO_TIME_FOR_REST"
 
 
 def test_experienced_worker_keeps_rooftop_in_danger():
@@ -155,3 +188,18 @@ def test_forecast_date_window():
     for bad in ((today - timedelta(days=1)).isoformat(), (today + timedelta(days=7)).isoformat(), "09-10-2026"):
         with pytest.raises(ValidationError):
             OptimizeRequest(target_income=800, date=bad)
+
+
+def test_second_pass_timeout_keeps_first_pass_plan(monkeypatch):
+    from ortools.sat.python import cp_model
+    real = cp_model.CpSolver.solve
+    calls = {"n": 0}
+
+    def flaky(self, model, *a, **k):
+        calls["n"] += 1
+        return cp_model.UNKNOWN if calls["n"] == 2 else real(self, model, *a, **k)
+
+    monkeypatch.setattr(cp_model.CpSolver, "solve", flaky)
+    p = demo(0)
+    assert p["scheduled_income"] >= 800 and p["schedule"]
+    assert "NOT_PROVEN_OPTIMAL" in p["warning_codes"]

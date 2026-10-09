@@ -11,8 +11,9 @@ from .models import Job, OptimizeRequest, to_hhmm, to_min
 
 SLOT = 15
 SCALE = 10
-# Four solves per plan (income, exposure, drift, baseline) must fit the 2 s budget.
-PHASE_LIMIT_S = 0.5
+# Wall-clock guard per solve. Typical demo plans finish all four solves in ~0.1-0.3 s; the guard
+# only matters under CPU contention (cold Lambda, busy host), where a tight limit returned empty plans.
+PHASE_LIMIT_S = 1.5
 
 WARNINGS = {
     "PROTOTYPE": "This plan is a scheduling prototype, not a certified occupational safety assessment.",
@@ -57,6 +58,10 @@ def _blocked(job: Job, start: int, cats: list[int], experience: str) -> str | No
         r = policy.blocked_reason(job.environment, job.workload, _cat_at(cats, t), experience)
         if r:
             return r
+    for t in range(start - job.travel_minutes, start, SLOT):
+        r = policy.travel_blocked_reason(_cat_at(cats, t))
+        if r:
+            return r
     return None
 
 
@@ -90,18 +95,27 @@ def _candidates(req: OptimizeRequest, cats: list[int]):
             starts = [to_min(job.booked_start)]
         in_day = [s for s in starts if s - job.travel_minutes >= ws and s + job.duration_minutes <= we]
         blocks: Counter = Counter()
+        no_rest = 0
         for s in in_day:
             r = _blocked(job, s, cats, req.heat_work_experience)
             if r:
                 blocks[r] += 1
                 continue
             mc = max(_cat_at(cats, t) for t in _job_slots(job, s))
-            cands.append(Candidate(i, s, round(_exposure(job, s, cats) * SCALE), policy.recovery_minutes(job.environment, mc), mc))
+            rec = policy.recovery_minutes(job.environment, mc)
+            if s + job.duration_minutes + rec > we:
+                no_rest += 1
+                continue
+            cands.append(Candidate(i, s, round(_exposure(job, s, cats) * SCALE), rec, mc))
         if not in_day:
             why_none[i] = {"reason_code": "OUTSIDE_WORKDAY", "params": {}}
         elif not any(c.job == i for c in cands):
-            peak = max(max(_cat_at(cats, t) for t in _job_slots(job, s)) for s in in_day)
-            why_none[i] = {"reason_code": "BLOCKED_BY_HEAT_POLICY", "params": {"rule": blocks.most_common(1)[0][0], "peak_category_index": peak}}
+            if not blocks:
+                why_none[i] = {"reason_code": "NO_TIME_FOR_REST", "params": {}}
+            else:
+                peak = max(max(_cat_at(cats, t) for t in _job_slots(job, s)) for s in in_day)
+                why_none[i] = {"reason_code": "BLOCKED_BY_HEAT_POLICY",
+                               "params": {"rule": blocks.most_common(1)[0][0], "peak_category_index": peak, "no_rest_slots": no_rest}}
     return cands, why_none
 
 
@@ -141,6 +155,7 @@ def _solve_phases(req: OptimizeRequest, cands: list[Candidate]):
         return None, False, st == cp_model.UNKNOWN
     proven = st == cp_model.OPTIMAL
     max_income = int(s.objective_value)
+    first_pass = sorted((cands[k] for k in range(len(cands)) if s.value(x[k])), key=lambda c: c.start)
 
     m, x, income, exposure, drift = build()
     if max_income >= req.target_income:
@@ -150,7 +165,8 @@ def _solve_phases(req: OptimizeRequest, cands: list[Candidate]):
     m.minimize(exposure)
     s, st = run(m)
     if st not in ok:
-        return None, False, st == cp_model.UNKNOWN
+        # The max-income plan is already valid; return it rather than an empty timeout.
+        return first_pass, False, False
     proven &= st == cp_model.OPTIMAL
     best_exposure = int(s.objective_value)
     chosen = [cands[k] for k in range(len(cands)) if s.value(x[k])]
@@ -183,6 +199,8 @@ def _validate(req: OptimizeRequest, chosen: list[Candidate], cats: list[int]) ->
             raise PlanValidationError(f"{j.id} outside workday")
         if _blocked(j, c.start, cats, req.heat_work_experience):
             raise PlanValidationError(f"{j.id} placed in a blocked slot")
+        if c.start + j.duration_minutes + c.recovery > we:
+            raise PlanValidationError(f"{j.id} rest runs past the workday")
         spans.append((c.start - j.travel_minutes, c.start + j.duration_minutes + c.recovery))
     for a in range(len(spans)):
         for b in range(a + 1, len(spans)):
