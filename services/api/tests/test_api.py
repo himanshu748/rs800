@@ -20,10 +20,12 @@ def test_optimize_then_simulate_links_and_diffs():
     assert r.status_code == 200
     p = r.json()
     assert p["status"] == "target_met" and p["mode"] == "demo"
-    s = client.post(f"/api/v1/plans/{p['plan_id']}/simulate", json={"temperature_delta": 5}).json()
+    s = client.post(f"/api/v1/plans/{p['plan_id']}/simulate", json={"temperature_delta": 3}).json()
     assert s["parent_plan_id"] == p["plan_id"] and s["mode"] == "simulated"
     assert [r["job_id"] for r in s["diff"]["removed"]] == ["job-001"]
-    assert client.get(f"/api/v1/plans/{s['plan_id']}").json()["scheduled_income"] == 650
+    stored = client.get(f"/api/v1/plans/{s['plan_id']}").json()
+    assert stored["scheduled_income"] == 650
+    assert stored["diff"] == s["diff"] and stored["diff"]["removed"][0]["job_id"] == "job-001"
 
 
 def test_unknown_scenario_is_503_not_fabricated():

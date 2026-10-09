@@ -39,7 +39,8 @@ def _weather_for(req: OptimizeRequest) -> dict:
         raise HTTPException(503, {"status": "weather_unavailable", "detail": str(e)})
 
 
-def _run(req: OptimizeRequest, parent_id: str | None = None) -> dict:
+def _run(req: OptimizeRequest, parent: dict | None = None) -> dict:
+    parent_id = parent["plan_id"] if parent else None
     weather = _weather_for(req)
     try:
         result = plan(req, weather)
@@ -61,6 +62,8 @@ def _run(req: OptimizeRequest, parent_id: str | None = None) -> dict:
         "weather": weather,
         **result,
     }
+    if parent:
+        record["diff"] = _diff(parent, record)
     store.put(plan_id, record)
     _event("plan_generated", plan_id=plan_id, parent_plan_id=parent_id, status=result["status"],
            target=req.target_income, income=result["scheduled_income"], shortfall=result["shortfall"],
@@ -131,8 +134,7 @@ def simulate(plan_id: str, body: SimulateRequest):
     if not parent:
         raise HTTPException(404, "plan not found")
     req = OptimizeRequest(**{**parent["request"], "temperature_delta": body.temperature_delta})
-    rec = _run(req, parent_id=plan_id)
-    rec["diff"] = _diff(parent, rec)
+    rec = _run(req, parent=parent)
     _event("plan_recalculated", plan_id=rec["plan_id"], parent_plan_id=plan_id, delta=body.temperature_delta,
            removed=[r["job_id"] for r in rec["diff"]["removed"]], income_before=parent["scheduled_income"],
            income_after=rec["scheduled_income"])
