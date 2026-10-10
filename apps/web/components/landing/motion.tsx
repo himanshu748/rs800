@@ -40,23 +40,32 @@ export function useCountUp(target: number, ms = 900) {
   const [v, setV] = useState(target);
   const from = useRef(target);
   const reduced = useReducedMotion();
+  const instant = reduced || ms <= 0;
   useEffect(() => {
-    if (reduced) {
+    if (instant) {
       from.current = target;
       return;
     }
     const start = performance.now();
     const a = from.current;
     let raf = 0;
+    let cancelled = false;
     const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / ms);
+      if (cancelled) return;
+      // A frame's timestamp can precede the effect's performance.now().
+      const p = Math.max(0, Math.min(1, (now - start) / ms));
       const e = 1 - Math.pow(1 - p, 3);
-      setV(Math.round(a + (target - a) * e));
+      const next = Math.round(a + (target - a) * e);
+      // A new target must resume from this frame, not the last completed target.
+      from.current = next;
+      setV(next);
       if (p < 1) raf = requestAnimationFrame(tick);
-      else from.current = target;
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, ms, reduced]);
-  return reduced ? target : v;
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [target, ms, instant]);
+  return instant ? target : v;
 }
