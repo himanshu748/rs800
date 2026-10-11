@@ -10,6 +10,8 @@ import os
 import urllib.request
 import uuid
 
+from .models import TIME_RE, to_hhmm, to_min
+
 DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 DEFAULT_MODAL_URL = "https://inference.us-west.modal.direct/v1"
 DEFAULT_MODAL_MODEL = "jhahimanshu653--ep-glm-5-3-server.us-west.modal.direct"
@@ -51,10 +53,20 @@ SYSTEM = (
 )
 
 REQUIRED = ["earnings", "duration_minutes", "earliest_start", "latest_finish", "environment", "workload"]
+ADJUSTABLE = ["duration_minutes", "travel_minutes", "earliest_start", "latest_finish", "preferred_start"]
 
 
-def _round15(v):
-    return None if v is None else max(15, int(round(v / 15) * 15))
+def _ceil15(v):
+    return None if v is None else max(15, -(-int(v) // 15) * 15)
+
+
+def _snap_time(t, up: bool):
+    """Snap to the 15-minute grid without loosening it: starts move later, deadlines earlier."""
+    if not isinstance(t, str) or not TIME_RE.match(t):
+        return t
+    m = to_min(t)
+    m = -(-m // 15) * 15 if up else m // 15 * 15
+    return to_hhmm(min(m, 23 * 60 + 45))
 
 
 def _clean(raw: dict) -> dict:
@@ -63,18 +75,20 @@ def _clean(raw: dict) -> dict:
         "title": (raw.get("title") or "Job")[:100],
         "title_en": (raw.get("title_en") or raw.get("title") or "")[:100],
         "earnings": raw.get("earnings"),
-        "duration_minutes": _round15(raw.get("duration_minutes")),
-        "earliest_start": raw.get("earliest_start"),
-        "latest_finish": raw.get("latest_finish"),
-        "preferred_start": raw.get("preferred_start"),
+        "duration_minutes": _ceil15(raw.get("duration_minutes")),
+        "earliest_start": _snap_time(raw.get("earliest_start"), up=True),
+        "latest_finish": _snap_time(raw.get("latest_finish"), up=False),
+        "preferred_start": _snap_time(raw.get("preferred_start"), up=True),
         "environment": raw.get("environment"),
         "workload": raw.get("workload"),
         "location_zone": raw.get("location_zone") or "",
-        "travel_minutes": _round15(raw.get("travel_minutes")) if raw.get("travel_minutes") else 0,
+        "travel_minutes": min(120, _ceil15(raw.get("travel_minutes"))) if raw.get("travel_minutes") else 0,
         "flexible": raw.get("flexible") if raw.get("flexible") is not None else True,
         "confirmed": False,
     }
     job["missing"] = [k for k in REQUIRED if job.get(k) in (None, "")]
+    job["adjusted"] = [{"field": k, "from": raw.get(k), "to": job[k]} for k in ADJUSTABLE
+                       if raw.get(k) not in (None, "", 0) and raw.get(k) != job[k]]
     return job
 
 

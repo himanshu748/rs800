@@ -15,16 +15,37 @@ const LOADS: Workload[] = ["light", "moderate", "heavy"];
 export const field =
   "min-h-11 w-full rounded-lg border border-border bg-bg px-3 text-base text-text focus:border-heat aria-[invalid=true]:border-critical";
 
-function snap(t?: string | null) {
+const MAX_EARNINGS = 100_000;
+const ADJ_LABEL: Record<string, Key> = {
+  duration_minutes: "duration",
+  travel_minutes: "travel",
+  earliest_start: "earliest",
+  latest_finish: "latest",
+  preferred_start: "booked",
+};
+
+// Starts snap later and deadlines earlier so an off-grid draft never gets a looser window.
+function snap(t: string | null | undefined, up: boolean) {
   if (!t || !/^\d{2}:\d{2}$/.test(t)) return undefined;
-  const m = Math.round(toMin(t) / 15) * 15;
+  const m = Math.min((up ? Math.ceil : Math.floor)(toMin(t) / 15) * 15, 23 * 60 + 45);
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+function adjustments(initial: DraftJob | Job) {
+  const out = new Map<string, { from: unknown; to: unknown }>();
+  for (const a of ("adjusted" in initial && initial.adjusted) || []) out.set(a.field, { from: a.from, to: a.to });
+  for (const [k, up] of [["earliest_start", true], ["latest_finish", false], ["preferred_start", true]] as const) {
+    const v = initial[k];
+    const to = snap(v, up);
+    if (v && to && to !== v) out.set(k, { from: v, to });
+  }
+  return [...out].map(([field, a]) => ({ field, ...a }));
 }
 
 export function validate(j: Partial<Job>): Record<string, Key> {
   const e: Record<string, Key> = {};
   if (!j.title?.trim()) e.title = "v_required";
-  if (!j.earnings || j.earnings <= 0) e.earnings = "v_earnings";
+  if (!j.earnings || j.earnings <= 0 || j.earnings > MAX_EARNINGS) e.earnings = "v_earnings";
   if (!j.duration_minutes || j.duration_minutes < 15 || j.duration_minutes > 480 || j.duration_minutes % 15)
     e.duration_minutes = "v_duration";
   if (!j.earliest_start) e.earliest_start = "v_required";
@@ -48,10 +69,11 @@ export function JobForm({ initial, onSave, onCancel }: { initial: DraftJob | Job
     travel_minutes: 0,
     flexible: true,
     ...initial,
-    earliest_start: snap(initial.earliest_start),
-    latest_finish: snap(initial.latest_finish),
-    preferred_start: snap(initial.preferred_start) ?? null,
+    earliest_start: snap(initial.earliest_start, true),
+    latest_finish: snap(initial.latest_finish, false),
+    preferred_start: snap(initial.preferred_start, true) ?? null,
   });
+  const [adjusted] = useState(() => adjustments(initial));
   const [tried, setTried] = useState(false);
   const errors = validate(j);
   const set = <K extends keyof Job>(k: K, v: Job[K]) => setJ((p) => ({ ...p, [k]: v }));
@@ -85,6 +107,16 @@ export function JobForm({ initial, onSave, onCancel }: { initial: DraftJob | Job
 
   return (
     <form onSubmit={submit} className="rise space-y-4 rounded-2xl border border-heat/50 bg-surface p-4 sm:p-6" noValidate>
+      {adjusted.length > 0 && (
+        <div role="status" className="rounded-lg border border-warn/60 bg-warn/10 p-3 text-sm">
+          <p className="font-semibold text-warn">{t("adjTitle")}</p>
+          <ul className="mt-1 space-y-0.5">
+            {adjusted.map((a) => (
+              <li key={a.field}>{t(ADJ_LABEL[a.field] ?? "duration")}: {String(a.from)} → {String(a.to)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <label className="block">
         <span className="text-sm text-muted">{t("title")}</span>
         <input className={field} value={j.title ?? ""} maxLength={100} aria-invalid={tried && !!errors.title} onChange={(e) => set("title", e.target.value)} />
@@ -126,7 +158,7 @@ export function JobForm({ initial, onSave, onCancel }: { initial: DraftJob | Job
         <label>
           <span className="text-sm text-muted">{t("travel")}</span>
           <select className={field} value={j.travel_minutes ?? 0} onChange={(e) => set("travel_minutes", Number(e.target.value))}>
-            {[0, 15, 30, 45, 60, 75, 90].map((m) => (
+            {[0, 15, 30, 45, 60, 75, 90, 105, 120].map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>

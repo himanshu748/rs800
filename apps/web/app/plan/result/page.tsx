@@ -252,8 +252,11 @@ function Simulator({ original, sim, onSim, onRestore }: { original: Plan; sim: P
     setError("");
     try {
       onSim(await api.simulate(original.plan_id, delta));
-    } catch {
-      setError(t("apiDown"));
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) setError(t("planNotFound"));
+      else if (e instanceof ApiError && e.status === 503) setError(t("weatherDown"));
+      else if (e instanceof ApiError && e.status >= 400 && e.status < 500) setError(t("badInput", { detail: e.message }));
+      else setError(t("apiDown"));
     } finally {
       setBusy(false);
     }

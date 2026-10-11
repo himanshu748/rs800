@@ -25,6 +25,7 @@ export interface DraftJob extends Partial<Omit<Job, "id">> {
   title: string;
   title_en?: string;
   missing?: string[];
+  adjusted?: { field: string; from: unknown; to: unknown }[];
 }
 
 export interface HourlyWeather {
@@ -145,7 +146,9 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const d = body?.detail;
-    const msg = typeof d === "string" ? d : d?.detail || d?.status || JSON.stringify(d ?? body);
+    const msg = Array.isArray(d)
+      ? d.map((x: { loc?: unknown[]; msg?: string }) => [x.loc?.slice(1).join("."), x.msg].filter(Boolean).join(": ")).join("; ")
+      : typeof d === "string" ? d : d?.detail || d?.status || JSON.stringify(d ?? body);
     throw new ApiError(res.status, msg);
   }
   return body as T;

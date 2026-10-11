@@ -189,7 +189,8 @@ function Jobs({ onBack }: { onBack: () => void }) {
       savePlan(plan);
       router.push(`/plan/result/?id=${plan.plan_id}`);
     } catch (e) {
-      setError(e instanceof ApiError && e.status === 503 ? t("weatherDown") : t("apiDown"));
+      if (e instanceof ApiError && e.status === 422) setError(t("badInput", { detail: e.message }));
+      else setError(e instanceof ApiError && e.status === 503 ? t("weatherDown") : t("apiDown"));
       setBusy(false);
     }
   };
