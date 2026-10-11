@@ -19,6 +19,8 @@ CITIES = {
     "Mumbai": (19.08, 72.88),
 }
 OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
+HOURLY_FIELDS = ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "shortwave_radiation", "uv_index"]
+REQUIRED_FIELDS = ["temperature_2m", "relative_humidity_2m"]
 LIVE_TTL_S = 30 * 60
 _live_cache: dict[tuple, tuple[float, dict]] = {}
 
@@ -47,7 +49,7 @@ def fetch_live(city: str, date: str | None, tz: str = "Asia/Kolkata") -> dict:
     lat, lon = CITIES[city]
     q = urllib.parse.urlencode({
         "latitude": lat, "longitude": lon, "timezone": tz, "start_date": day, "end_date": day,
-        "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m,shortwave_radiation,uv_index",
+        "hourly": ",".join(HOURLY_FIELDS),
     })
     try:
         with urllib.request.urlopen(f"{OPEN_METEO}?{q}", timeout=10) as r:
@@ -56,8 +58,11 @@ def fetch_live(city: str, date: str | None, tz: str = "Asia/Kolkata") -> dict:
         raise WeatherUnavailable(f"Open-Meteo request failed: {e}") from e
     h = body.get("hourly") or {}
     times = h.get("time") or []
-    if len(times) != 24 or any(v is None for v in h.get("temperature_2m", [None])):
+    if len(times) != 24 or any(len(h.get(k) or []) != 24 for k in HOURLY_FIELDS):
         raise WeatherUnavailable("Open-Meteo returned incomplete hourly data")
+    for k in REQUIRED_FIELDS:
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in h[k]):
+            raise WeatherUnavailable(f"Open-Meteo returned missing or non-numeric {k}")
     hourly = [
         {
             "time": times[i][-5:],
@@ -100,6 +105,23 @@ def annotate(snapshot: dict) -> dict:
     return snapshot
 
 
-def get_weather(mode: str, scenario_id: str | None, city: str, date: str | None, delta: float, tz: str) -> dict:
+def get_base(mode: str, scenario_id: str | None, city: str, date: str | None, tz: str) -> dict:
     base = load_scenario(scenario_id or "") if mode == "demo" else fetch_live(city, date, tz)
-    return apply_delta(base, delta)
+    return annotate(base)
+
+
+def get_weather(mode: str, scenario_id: str | None, city: str, date: str | None, delta: float, tz: str) -> dict:
+    return apply_delta(get_base(mode, scenario_id, city, date, tz), delta)
+
+
+def base_of(weather: dict) -> dict:
+    """Recover the unshifted forecast from a stored plan's weather, for plans saved before base_weather existed."""
+    delta = weather.get("temperature_delta") or 0
+    out = copy.deepcopy(weather)
+    out["temperature_delta"] = 0
+    if delta:
+        out["mode"] = "live" if out.get("id", "").startswith("live-") else "demo"
+        out["label"] = out.get("label", "").split(" ON ", 1)[-1]
+        for row in out["hourly"]:
+            row["temperature_c"] = round(row["temperature_c"] - delta, 1)
+    return annotate(out)

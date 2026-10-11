@@ -12,7 +12,7 @@ from . import parse_jobs, policy
 from .models import OptimizeRequest, ParseRequest, SimulateRequest
 from .optimizer import PlanValidationError, plan
 from .store import PlanStore
-from .weather import CITIES, SCENARIOS, WeatherUnavailable, get_weather
+from .weather import CITIES, SCENARIOS, WeatherUnavailable, apply_delta, base_of, get_weather
 
 
 app = FastAPI(title="₹800 planning API", version="1.0")
@@ -30,7 +30,9 @@ def _event(name: str, **fields) -> None:
     print(json.dumps({"event": name, **fields}, ensure_ascii=False), flush=True)
 
 
-def _weather_for(req: OptimizeRequest) -> dict:
+def _weather_for(req: OptimizeRequest, base: dict | None = None) -> dict:
+    if base is not None:
+        return apply_delta(base, req.temperature_delta)
     try:
         return get_weather(req.weather.mode, req.weather.scenario_id, req.location.city, req.date,
                            req.temperature_delta, req.timezone)
@@ -41,7 +43,8 @@ def _weather_for(req: OptimizeRequest) -> dict:
 
 def _run(req: OptimizeRequest, parent: dict | None = None) -> dict:
     parent_id = parent["plan_id"] if parent else None
-    weather = _weather_for(req)
+    # A replan shifts the forecast the parent was solved on, never a fresh fetch, so the delta stays relative to it.
+    weather = _weather_for(req, base_of(parent["weather"]) if parent else None)
     try:
         result = plan(req, weather)
     except PlanValidationError as e:
@@ -133,7 +136,8 @@ def simulate(plan_id: str, body: SimulateRequest):
     parent = store.get(plan_id)
     if not parent:
         raise HTTPException(404, "plan not found")
-    req = OptimizeRequest(**{**parent["request"], "temperature_delta": body.temperature_delta})
+    req = OptimizeRequest.model_validate({**parent["request"], "temperature_delta": body.temperature_delta},
+                                         context={"stored_plan": True})
     rec = _run(req, parent=parent)
     _event("plan_recalculated", plan_id=rec["plan_id"], parent_plan_id=plan_id, delta=body.temperature_delta,
            removed=[r["job_id"] for r in rec["diff"]["removed"]], income_before=parent["scheduled_income"],

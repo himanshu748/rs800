@@ -3,7 +3,7 @@ from datetime import date as date_cls, datetime, timedelta
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 MAX_FORECAST_DAYS = 6
@@ -113,13 +113,16 @@ class OptimizeRequest(BaseModel):
 
     @field_validator("date")
     @classmethod
-    def _forecast_date(cls, v: str | None) -> str | None:
+    def _forecast_date(cls, v: str | None, info: ValidationInfo) -> str | None:
         if v is None:
             return v
         try:
             d = date_cls.fromisoformat(v)
         except ValueError:
             raise ValueError("date must be YYYY-MM-DD")
+        # A stored plan replays its saved forecast, so its date may have passed.
+        if (info.context or {}).get("stored_plan"):
+            return v
         today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
         if not today <= d <= today + timedelta(days=MAX_FORECAST_DAYS):
             raise ValueError(f"date must be today or up to {MAX_FORECAST_DAYS} days ahead")
