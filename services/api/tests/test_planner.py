@@ -203,3 +203,37 @@ def test_second_pass_timeout_keeps_first_pass_plan(monkeypatch):
     p = demo(0)
     assert p["scheduled_income"] >= 800 and p["schedule"]
     assert "NOT_PROVEN_OPTIMAL" in p["warning_codes"]
+
+
+def test_third_pass_timeout_is_not_reported_optimal(monkeypatch):
+    from ortools.sat.python import cp_model
+    real = cp_model.CpSolver.solve
+    calls = {"n": 0}
+
+    def flaky(self, model, *a, **k):
+        calls["n"] += 1
+        return cp_model.UNKNOWN if calls["n"] == 3 else real(self, model, *a, **k)
+
+    monkeypatch.setattr(cp_model.CpSolver, "solve", flaky)
+    p = demo(0)
+    assert p["scheduled_income"] >= 800 and p["schedule"]
+    assert p["solver"]["status"] == "FEASIBLE" and "NOT_PROVEN_OPTIMAL" in p["warning_codes"]
+
+
+def test_validator_rejects_missing_rest():
+    from dataclasses import replace
+    from app.optimizer import PlanValidationError, _candidates, _validate
+    req = OptimizeRequest(target_income=800, jobs=DEMO["jobs"])
+    cats = _cats(0)
+    cands, _ = _candidates(req, cats)
+    needs_rest = next(c for c in cands if c.recovery > 0)
+    _validate(req, [needs_rest], cats)
+    with pytest.raises(PlanValidationError, match="rest"):
+        _validate(req, [replace(needs_rest, recovery=0)], cats)
+
+
+def test_demo_headline_numbers():
+    p = demo(0)
+    rooftop = next(s for s in p["schedule"] if s["job_id"] == "job-001")
+    assert rooftop["start"] == "06:30"
+    assert p["relative_score_reduction_percent"] == 26.5  # shown as 27% (Math.round in the UI)

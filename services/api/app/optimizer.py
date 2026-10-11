@@ -179,6 +179,9 @@ def _solve_phases(req: OptimizeRequest, cands: list[Candidate]):
     if st in ok:
         proven &= st == cp_model.OPTIMAL
         chosen = [cands[k] for k in range(len(cands)) if s3.value(x[k])]
+    else:
+        # The second-pass plan stands, but booked-time drift was never minimized.
+        proven = False
     return sorted(chosen, key=lambda c: c.start), proven, False
 
 
@@ -199,6 +202,9 @@ def _validate(req: OptimizeRequest, chosen: list[Candidate], cats: list[int]) ->
             raise PlanValidationError(f"{j.id} outside workday")
         if _blocked(j, c.start, cats, req.heat_work_experience):
             raise PlanValidationError(f"{j.id} placed in a blocked slot")
+        need = policy.recovery_minutes(j.environment, max(_cat_at(cats, t) for t in _job_slots(j, c.start)))
+        if c.recovery < need:
+            raise PlanValidationError(f"{j.id} has {c.recovery} min rest, policy requires {need}")
         if c.start + j.duration_minutes + c.recovery > we:
             raise PlanValidationError(f"{j.id} rest runs past the workday")
         spans.append((c.start - j.travel_minutes, c.start + j.duration_minutes + c.recovery))
