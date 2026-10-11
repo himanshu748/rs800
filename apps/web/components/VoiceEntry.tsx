@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { api, type DraftJob } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 
@@ -15,6 +15,8 @@ interface SpeechRec {
   stop: () => void;
 }
 
+const noSubscribe = () => () => {};
+
 function getRecognizer(): (new () => SpeechRec) | null {
   if (typeof window === "undefined") return null;
   const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
@@ -28,7 +30,9 @@ export function VoiceEntry({ onDrafts }: { onDrafts: (d: DraftJob[]) => void }) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const rec = useRef<SpeechRec | null>(null);
-  const Rec = getRecognizer();
+  // Server snapshot is false so the prerendered HTML matches the first client render.
+  const speech = useSyncExternalStore(noSubscribe, () => getRecognizer() !== null, () => false);
+  const Rec = speech ? getRecognizer() : null;
 
   const listen = () => {
     if (!Rec) return;
